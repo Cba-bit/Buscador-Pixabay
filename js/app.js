@@ -1,7 +1,11 @@
 const formulario = document.querySelector('#formulario');
 const resultado = document.querySelector('#resultado');
+const paginacionDiv = document.querySelector('#paginacion');
+
 const registrosPorPagina = 40;
 let totalPaginas;
+let iterador;
+let paginaActual = 1;
 
 window.onload = () => {
     formulario.addEventListener('submit', validarFormulario);
@@ -15,7 +19,7 @@ function validarFormulario(e) {
         return;
     }
 
-    buscarImagenes(terminoBusqueda);
+    buscarImagenes();
 }
 
 function mostrarAlerta(mensaje) {
@@ -37,9 +41,11 @@ function mostrarAlerta(mensaje) {
     }
 }
 
-function buscarImagenes(termino) {
+function buscarImagenes() {
+    const termino = document.querySelector('#termino').value;
+
     const key = '18821066-963e5fce17f575f7422923fc8';
-    const url = `https://pixabay.com/api/?key=${key}&q=${termino}&per_page=100`;
+    const url = `https://pixabay.com/api/?key=${key}&q=${termino}&per_page=${registrosPorPagina}&page=${paginaActual}`;
 
     fetch(url)
         .then((respuesta) => respuesta.json())
@@ -49,12 +55,19 @@ function buscarImagenes(termino) {
         });
 }
 
+// Generador que va a registrar la cantidad de elementos de acuerdo a las paginas
+function* crearPaginador(total) {
+    for (let i = 1; i <= total; i++) {
+        yield i;
+    }
+}
+
 function calcularPaginas(total) {
     return parseInt(Math.ceil(total / registrosPorPagina));
 }
 
 function mostrarImagenes(imagenes) {
-    console.log(imagenes);
+    // console.log(imagenes);
     while (resultado.firstChild) {
         resultado.removeChild(resultado.firstChild);
     }
@@ -81,4 +94,36 @@ function mostrarImagenes(imagenes) {
             </div>
         `;
     });
+
+    //Limpiar Paginador premio
+    while (paginacionDiv.firstChild) {
+        paginacionDiv.removeChild(paginacionDiv.firstChild);
+    }
+
+    // Generamos nuevo html
+    imprimirPaginador();
+}
+
+function imprimirPaginador() {
+    iterador = crearPaginador(totalPaginas);
+
+    while (true) {
+        const { value, done } = iterador.next();
+        if (done) return;
+
+        // Caso contrario, genera un boton por cada elemento en el generador
+        const boton = document.createElement('a');
+        boton.href = '#';
+        boton.dataset.pagina = value;
+        boton.textContent = value;
+        boton.classList.add('siguiente', 'bg-yellow-400', 'px-4', 'py-1', 'mr-2', 'font-bold', 'mb-4', 'rounded');
+
+        boton.onclick = () => {
+            paginaActual = value;
+
+            buscarImagenes();
+        };
+
+        paginacionDiv.appendChild(boton);
+    }
 }
